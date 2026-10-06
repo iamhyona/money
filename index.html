@@ -277,6 +277,7 @@ html.lock { overflow:hidden; }
   <div class="hd">
     <button class="brand" id="brand">가계부</button>
     <div class="hr">
+      <button class="ib" id="shtBtn" aria-label="구글 시트 열기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 9v12"/></svg></button>
       <button class="ib" id="fltBtn" aria-label="필터"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M19 7h1M4 17h3M13 17h7"/><circle cx="16" cy="7" r="2.5"/><circle cx="10" cy="17" r="2.5"/></svg></button>
       <button class="ib" id="setBtn" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <button class="who" id="whoBtn"><span class="av" id="whoAv"></span><span id="whoNm"></span></button>
@@ -331,6 +332,9 @@ var APP_ID = 'money', BOOKS = ['hyuna', 'share', 'pitch'];   // 이 앱에서 �
 var LSP = APP_ID === 'buza' ? '' : APP_ID + ':';   // 앱마다 저장 공간 분리 (PIN 등)
 var ls = { get: function (k) { try { return localStorage.getItem(LSP + k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(LSP + k, v); } catch (e) {} } };
 var NAMES = { ddung: '뚠냥', hyuna: '땡깡', share: '공용', pitch: '핏치' };
+// 시트 바로가기 (서버가 주소를 주면 그걸 쓰고, 없으면 아래 파일 → 폴더)
+var SHEETS = { hyuna: { 2026: '1G-69lz0jbHCFD160TYduTvpZygivS5waxpktCx9O5Hc' }, ddung: { 2026: '1MIy0TJbDVJIa4Mz3XPFQXG0R33_tKmr7xLSjmeonP3Q' }, share: { 2026: '1vQ0kWRpH6ObUO9ZlOr4NEhywNcYh5ToZQ5FKRsido80' }, pitch: { 2026: '1jlpjfiuRqjMOL3YmT-CUPiXNpELxw1OVc8ydc9XzfDI' } };
+var FOLDERS = { hyuna: '1EvhrYAMyCMbubEmZldQ97K2PMPJNm97_', ddung: '117BzMluYXxrP1sMmfO3XB_j70pPnnOGH', share: '1VqD--linAxOP2pLxcPO5NrM9BSLkA4tH', pitch: '1Q11v41zGbGgM3MTai6OhIpfGNTgtNzZE' };
 var W = ['일', '월', '화', '수', '목', '금', '토'];
 var PAL = ['#14b8a6', '#38bdf8', '#6366f1', '#a78bfa', '#f472b6', '#fb923c', '#facc15', '#84cc16'];
 var OTHER = '#d1d6db';
@@ -375,7 +379,7 @@ function call(fn) {
   return run(tries).then(function (o) { if (!o.ok) throw new Error(o.error || '오류가 났어요'); return o.data; });
 }
 // 새 버전이 올라오면 자동으로 새로 불러오기 (깃허브 페이지는 브라우저에 최대 10분 저장됨)
-var APP_VER = '20261006a';
+var APP_VER = '20261006b';
 function checkUpdate() {
   fetch('index.html?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
     var m = t.match(/var APP_VER = '(\w+)'/);
@@ -421,6 +425,11 @@ function pickWho(k) {
   setTimeout(function () { if (S.key === k && !savedMaster(k)) fetchMaster(k).catch(function () {}); }, 4000);   // 설정용 카테고리도
 }
 $('#whoBtn').onclick = showWho;
+$('#shtBtn').onclick = function () {
+  if (!S.key) return;
+  var y = S.view === 'month' ? S.my : S.y, d = S.cache[S.key + y] || {}, id = (SHEETS[S.key] || {})[y];
+  window.open(d.url || (id ? 'https://docs.google.com/spreadsheets/d/' + id + '/edit' : 'https://drive.google.com/drive/folders/' + FOLDERS[S.key]), '_blank');
+};
 $('#brand').onclick = function () { S.y = now.getFullYear(); S.m = now.getMonth() + 1; go('dash'); };
 $$('#nav button').forEach(function (b) { b.onclick = function () {
   if (b.dataset.v === 'cal') { S.sel = null; }
