@@ -340,7 +340,8 @@ var PAL = ['#14b8a6', '#38bdf8', '#6366f1', '#a78bfa', '#f472b6', '#fb923c', '#f
 var OTHER = '#d1d6db';
 var now = new Date();
 var TODAY = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
-var S = { pin: ls.get('pin') || '', key: '', view: 'dash', y: now.getFullYear(), m: now.getMonth() + 1, my: now.getFullYear(), sel: null,
+var FIXED_PIN = '7291';   // 2026-11-04 (현아): PIN 없이 바로 접속 — 앱이 자동으로 넣음
+var S = { pin: FIXED_PIN, key: '', view: 'dash', y: now.getFullYear(), m: now.getMonth() + 1, my: now.getFullYear(), sel: null,
   cache: {}, years: null, f: {}, edit: null, flt: fltDefault(), open: {}, ls: null };
 S.sort = ['new', 'old', 'amt', 'low'].indexOf(ls.get('sort')) >= 0 ? ls.get('sort') : 'new';   // 내역 정렬: 최신순 / 고액순
 
@@ -379,7 +380,7 @@ function call(fn) {
   return run(tries).then(function (o) { if (!o.ok) throw new Error(o.error || '오류가 났어요'); return o.data; });
 }
 // 새 버전이 올라오면 자동으로 새로 불러오기 (깃허브 페이지는 브라우저에 최대 10분 저장됨)
-var APP_VER = '20261006b';
+var APP_VER = '20261104a';
 function checkUpdate() {
   fetch('index.html?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
     var m = t.match(/var APP_VER = '(\w+)'/);
@@ -469,7 +470,7 @@ function getYear(y) {
     return d;
   }, function (e) {
     var m = errMsg(e);
-    if (/NOPIN|PIN이/.test(m)) { S.pin = ''; ls.set('pin', ''); clearSaved(); showPin(); throw e; }
+    if (/NOPIN|PIN이/.test(m)) { toast('서버 PIN이 바뀌었어요'); throw e; }
     if (saved) return saved;   // 연결이 안 되면 저장본 그대로
     var d = { y: y, rows: [], months: [], hol: [], cats: [], pays: [], kinds: [], incomeCats: [], err: m };
     S.cache[k] = d; return d;
@@ -1347,8 +1348,7 @@ window.addEventListener('focus', softRefresh);
 setInterval(softRefresh, 60000);
 
 /* 시작 */
-if (S.pin) { showWho(); call('appCheck', S.pin).catch(function () { S.pin = ''; ls.set('pin', ''); showPin(); }); }
-else showPin();
+S.pin = FIXED_PIN; ls.set('pin', FIXED_PIN); showWho();   // PIN 화면 없이 바로 가계부 선택
 </script>
 </body>
 </html>
