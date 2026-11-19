@@ -340,8 +340,8 @@ var PAL = ['#14b8a6', '#38bdf8', '#6366f1', '#a78bfa', '#f472b6', '#fb923c', '#f
 var OTHER = '#d1d6db';
 var now = new Date();
 var TODAY = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
-var FIXED_PIN = '7291';   // 2026-11-04 (현아): PIN 없이 바로 접속 — 앱이 자동으로 넣음
-var S = { pin: FIXED_PIN, key: '', view: 'dash', y: now.getFullYear(), m: now.getMonth() + 1, my: now.getFullYear(), sel: null,
+// 2026-11-19: PIN은 코드에 넣지 않음 — 기기마다 처음 한 번 입력하면 저장돼서 다음부터 바로 접속
+var S = { pin: '', key: '', view: 'dash', y: now.getFullYear(), m: now.getMonth() + 1, my: now.getFullYear(), sel: null,
   cache: {}, years: null, f: {}, edit: null, flt: fltDefault(), open: {}, ls: null };
 S.sort = ['new', 'old', 'amt', 'low'].indexOf(ls.get('sort')) >= 0 ? ls.get('sort') : 'new';   // 내역 정렬: 최신순 / 고액순
 
@@ -1348,7 +1348,12 @@ window.addEventListener('focus', softRefresh);
 setInterval(softRefresh, 60000);
 
 /* 시작 */
-S.pin = FIXED_PIN; ls.set('pin', FIXED_PIN); showWho();   // PIN 화면 없이 바로 가계부 선택
+(function () {   // 저장된 PIN이 있으면 바로 가계부 선택, 없거나 틀리면 PIN 화면 한 번
+  var saved = ls.get('pin');
+  if (!saved) return showPin();
+  S.pin = saved; showWho();
+  call('appCheck', saved).catch(function () { S.pin = ''; ls.set('pin', ''); showPin(); });
+})();
 </script>
 </body>
 </html>
